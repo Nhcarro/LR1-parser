@@ -1,0 +1,816 @@
+
+import java.io.Console;  
+import java.lang.Character;  
+import java.util.*;
+
+public class LR1 {
+    static class obj{
+    public String nonTermsymbol;
+    public double value;
+    public int CurrState;
+    public String Termsymbol;
+
+    obj(String TMPsymbol,double TMPvalue,int State){
+        nonTermsymbol = TMPsymbol;
+        value = TMPvalue;
+        CurrState = State;
+        Termsymbol = null;
+    } 
+
+    obj(String TMPsymbol, int State){
+        Termsymbol = TMPsymbol;
+        CurrState = State;
+        nonTermsymbol = null;
+        value = 0.0;
+    }
+
+    public void changenonTermSymbol(String newSymbol){
+        nonTermsymbol =  newSymbol;
+    }
+    public void changeState(int State){
+        CurrState =  State;
+    }
+    public void changeValue(Double TMPvalue){
+        value = TMPvalue;
+    }
+    public int getCurrState() {
+        return CurrState;
+    }
+    public String getnontermSymbol() {
+        return nonTermsymbol;
+    }
+    public String getTermsymbol() {
+        return Termsymbol;
+    }
+    public double getValue() {
+        return value;
+    }
+    public String printOBJ(){
+        if(Termsymbol == null){
+            return ("("+nonTermsymbol+"="+value+":"+CurrState+" ");
+        }else{
+            return ("("+Termsymbol+":"+CurrState+") ");
+        }
+    }
+    };
+
+
+    //public static Stack<Integer> stateStack = new Stack<>();
+    public static Stack<obj> objStack = new Stack<>();
+    public static ArrayList<obj> objArr;
+    public static String finalExpression; 
+    public static StringTokenizer st;
+    public static StringTokenizer stArr;  
+    public static Double startvalue;
+    public static obj tempOBJ;
+    //public static double currNum = 0;
+    public static String currToken; 
+    public static String nextToken; //the next token
+    public static int prevState;
+    public static char token; 
+    public static double value;
+    public static String E = "E";
+    public static String F = "F";
+    public static String T = "T"; 
+    public static int bottomOfStack;
+    public static boolean isSub = false;
+    public static boolean isDiv = false;
+    public static String expression = "";
+    public static ArrayList<String> expressionArr;
+    public static int arrPlace;
+    
+//    public static String currOperation = "+"; 
+//    public static double Total = 0;  
+
+   public static void main(String[] args) throws Exception{ 
+   Console console = System.console();   
+      
+   
+   if (console==null){  
+   System.out.print("console not available ");  
+   }else { 
+      expression = args[0];  
+      System.out.println();  
+   }  
+
+     expression = expression + "$";  
+     finalExpression = expression; 
+     String regex = "(?=[-+*/()])|(?<=[-+*/()$])"; 
+     st = new StringTokenizer(expression,regex,true); 
+     stArr = new StringTokenizer(expression,regex,true);
+     expressionArr = new ArrayList<String>();
+     objArr = new ArrayList<obj>();
+     while(stArr.hasMoreTokens()){
+        expressionArr.add(stArr.nextToken());
+     }
+      
+    start();
+     System.out.println();
+     System.out.println("Valid Expression, value = "+(int)objStack.peek().getValue()+"."); 
+
+    }  
+
+    static void start(){
+            nextToken = st.nextToken();
+            token = nextToken.charAt(0);
+            if (('0'<=token && token<='9')||token=='.'){
+                startvalue = Double.parseDouble(nextToken);
+                nextToken = "n";
+                
+            }
+            objStack.push(new obj("@",0));
+            objArr.add(new obj("@",0));
+            printState();
+            state0();
+        }   
+//methods are states / switch is current token (the future token)
+    static void state0(){
+    // System.out.println("next token at 0"+nextToken);
+    switch (nextToken) { 
+        case"n": 
+        objStack.peek().changeState(0);
+        objArr.get(objArr.size()-1).changeState(0);
+        state5();
+        break;
+        case"(":
+        objStack.peek().changeState(0);
+        objArr.get(objArr.size()-1).changeState(0);
+        state4();
+        break;
+  default: 
+//   System.out.println("0"+nextToken);
+   getNextToken(0);
+   state0(); 
+   break;
+    }
+    }
+    static void state1(){
+        switch (nextToken) { 
+            case"+": 
+            objStack.peek().changeState(1);
+            objArr.get(objArr.size()-1).changeState(1);
+            state6();
+            break;
+            case"-":
+            objStack.peek().changeState(1);
+            objArr.get(objArr.size()-1).changeState(1);
+            state6();
+            break;
+            case"$":
+            return;
+      default: 
+        //System.out.println("1"+nextToken);
+        getNextToken(1);
+        state1();
+        }
+        
+        }
+    static void state2(){
+        // pop stack-call reduction method-make letter value = value
+            switch (nextToken) { 
+                case"+": 
+               
+                reduction(E);
+                break;
+                case"-":
+               
+                reduction(E);
+                break;
+                 case"*": 
+                objStack.peek().changeState(2);
+                objArr.get(objArr.size()-1).changeState(2);
+                state7();
+                break;
+                case"/":
+                objStack.peek().changeState(2);
+                objArr.get(objArr.size()-1).changeState(2);
+                state7();
+                break;
+                case")":
+               
+                reduction(E);
+                break;
+                case "$":
+               
+                reduction(E);
+                break;
+
+          default: 
+          //System.out.println("2"+nextToken);
+            getNextToken(2);
+            state2();
+            }
+            }
+    static void state3(){
+            switch (nextToken) { 
+                case"+": 
+               
+                reduction(T);
+                break;
+                case"-":
+               
+                reduction(T);
+                break;
+                case"*": 
+               
+                reduction(T);
+                break;
+                case"/":
+               
+                reduction(T);
+                break;
+                case")": 
+               
+                reduction(T);
+                break;
+                case"$":
+               
+                reduction(T);
+                break;
+          default: 
+          //System.out.println("3"+nextToken);
+            getNextToken(3);
+            state3();
+            }
+            }  
+    static void state4(){
+        switch (nextToken) {
+            case "n":
+            objStack.peek().changeState(4);
+            objArr.get(objArr.size()-1).changeState(4);
+            state5();    
+            break;
+            case "(":
+            objStack.peek().changeState(4);
+            objArr.get(objArr.size()-1).changeState(4);
+            state4();
+            break;
+            default:
+            //System.out.println("4"+nextToken);
+            getNextToken(4);
+            state4();
+            break;
+        }
+    }
+    static void state5(){
+        switch (nextToken) {
+            case "+":
+            reduction(F);  
+            break;
+            case "-":
+            reduction(F);  
+            break;
+            case "*":
+            reduction(F);  
+            break;
+            case "/":
+            reduction(F);  
+            break;
+            case "(":
+            reduction(F);  
+            break;
+            case "$":
+            reduction(F);  
+            break;
+            default:
+            //System.out.println("5"+nextToken);
+            getNextToken(5);
+            state5(); 
+            break;
+            
+        }
+    }
+    static void state6(){
+        switch (nextToken) {
+            case "n":
+                objStack.peek().changeState(6);
+                objArr.get(objArr.size()-1).changeState(6);
+                state5();
+                break;
+            case "(":
+                objStack.peek().changeState(6);
+                objArr.get(objArr.size()-1).changeState(6);
+                state4();
+                break;
+            default:
+            //System.out.println("6"+nextToken);
+            getNextToken(6);
+            state6(); 
+                break;
+        }
+    }
+    static void state7(){
+        switch (nextToken) {
+            case "n":
+                objStack.peek().changeState(7);
+                objArr.get(objArr.size()-1).changeState(7);
+                state5();
+                break;
+            case "(":
+                state4();
+                break;
+            default:
+            //System.out.println("7"+nextToken);
+            getNextToken(7);
+            state7(); 
+                break;
+        }
+    }
+    static void state8(){
+        switch (nextToken) {
+            case "+":
+                objStack.peek().changeState(8);
+                objArr.get(objArr.size()-1).changeState(8);
+                state6();
+                break;
+            case "-":
+                objStack.peek().changeState(8);
+                objArr.get(objArr.size()-1).changeState(8);
+                state6();
+                break;
+            case ")":
+                objStack.peek().changeState(8);
+                objArr.get(objArr.size()-1).changeState(8);
+                state11();
+                break;
+            default:
+            //System.out.println("8"+nextToken);
+            getNextToken(8);
+            state8();
+                break;
+        }
+    }
+
+    static void state9(){
+        obj tmp;
+        switch (nextToken) {
+            case "+":
+            tmp = objStack.pop();
+            objArr.remove(objArr.size()-1);
+            if(objStack.peek().getTermsymbol().charAt(0)=='+'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() + tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            }else{      
+            if(objStack.peek().getTermsymbol().charAt(0) == '-'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() - tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            } 
+        }
+           tempOBJ = objStack.pop();
+            prevState = objStack.peek().getCurrState();
+            objStack.push(tempOBJ);
+            reduction(E);  
+            break;
+            case "-":
+            tmp = objStack.pop();
+            objArr.remove(objArr.size()-1);
+            if(objStack.peek().getTermsymbol().charAt(0)=='+'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() + tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            }else{      
+            if(objStack.peek().getTermsymbol().charAt(0) == '-'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() - tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            } 
+        }
+           tempOBJ = objStack.pop();
+            prevState = objStack.peek().getCurrState();
+            objStack.push(tempOBJ);
+            reduction(E);
+            break;
+            case "*":
+            objStack.peek().changeState(9);
+            objArr.get(objArr.size()-1).changeState(9);
+            state7(); 
+            break;
+            case "/":
+            objStack.peek().changeState(9);
+            objArr.get(objArr.size()-1).changeState(9);
+            state7(); 
+            break;
+            case ")":
+            tmp = objStack.pop();
+            objArr.remove(objArr.size()-1);
+            if(objStack.peek().getTermsymbol().charAt(0)=='+'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() + tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            }else{      
+            if(objStack.peek().getTermsymbol().charAt(0) == '-'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() - tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            } 
+        }
+           tempOBJ = objStack.pop();
+            prevState = objStack.peek().getCurrState();
+            objStack.push(tempOBJ);  
+            reduction(E); 
+            break;
+            case "$":
+            tmp = objStack.pop();
+            objArr.remove(objArr.size()-1);
+            if(objStack.peek().getTermsymbol().charAt(0)=='+'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() + tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            }else{      
+            if(objStack.peek().getTermsymbol().charAt(0) == '-'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() - tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            } 
+        }
+           tempOBJ = objStack.pop();
+            prevState = objStack.peek().getCurrState();
+            objStack.push(tempOBJ);
+            reduction(E); 
+            break;
+            default:
+            //System.out.println("9"+nextToken);
+            getNextToken(9);
+            state9();
+            break;
+        }
+    }
+    static void state10(){
+        obj tmp;
+        switch (nextToken) {
+            case "+":
+            tmp = objStack.pop();
+            objArr.remove(objArr.size()-1);
+            if(objStack.peek().getTermsymbol().charAt(0)=='*'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() * tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            }else{      
+            if(objStack.peek().getTermsymbol().charAt(0) == '/'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() / tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            } 
+        }
+           tempOBJ = objStack.pop();
+            prevState = objStack.peek().getCurrState();
+            objStack.push(tempOBJ);
+            reduction(T);    
+            break;
+            case "-":
+            tmp = objStack.pop();
+            objArr.remove(objArr.size()-1);
+            if(objStack.peek().getTermsymbol().charAt(0)=='*'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() * tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            }else{      
+            if(objStack.peek().getTermsymbol().charAt(0) == '/'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() / tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            } 
+        }
+           tempOBJ = objStack.pop();
+            prevState = objStack.peek().getCurrState();
+            objStack.push(tempOBJ);
+            reduction(T);   
+            break;
+            case "*":
+            tmp = objStack.pop();
+            objArr.remove(objArr.size()-1);
+            if(objStack.peek().getTermsymbol().charAt(0)=='*'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() * tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            }else{      
+            if(objStack.peek().getTermsymbol().charAt(0) == '/'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() / tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            } 
+        }
+           tempOBJ = objStack.pop();
+            prevState = objStack.peek().getCurrState();
+            objStack.push(tempOBJ);
+            reduction(T);  
+            break;
+            case "/":
+            tmp = objStack.pop();
+            objArr.remove(objArr.size()-1);
+            if(objStack.peek().getTermsymbol().charAt(0)=='*'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() * tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            }else{      
+            if(objStack.peek().getTermsymbol().charAt(0) == '/'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() / tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            } 
+        }
+           tempOBJ = objStack.pop();
+            prevState = objStack.peek().getCurrState();
+            objStack.push(tempOBJ);
+            reduction(T);  
+            break;
+            case ")":
+            tmp = objStack.pop();
+            objArr.remove(objArr.size()-1);
+            if(objStack.peek().getTermsymbol().charAt(0)=='*'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() * tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            }else{      
+            if(objStack.peek().getTermsymbol().charAt(0) == '/'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() / tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            } 
+        }
+           tempOBJ = objStack.pop();
+            prevState = objStack.peek().getCurrState();
+            objStack.push(tempOBJ);
+            reduction(T);    
+            break;
+            case "$":
+           // System.out.println("in case $ of 10");
+            tmp = objStack.pop();
+            objArr.remove(objArr.size()-1);
+            if(objStack.peek().getTermsymbol().charAt(0)=='*'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() * tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+            }else{
+            if(objStack.peek().getTermsymbol().charAt(0) == '/'){
+                objStack.pop();
+            objArr.remove(objArr.size()-1);
+            Double tmpValue = objStack.peek().getValue() / tmp.getValue();
+            objStack.peek().changeValue(tmpValue);
+            objArr.get(objArr.size()-1).changeValue(tmpValue);
+                } 
+            }
+           tempOBJ = objStack.pop();
+            prevState = objStack.peek().getCurrState();
+            objStack.push(tempOBJ);
+            reduction(T);  
+            break;
+            default:
+            //System.out.println("10"+nextToken);
+            getNextToken(10);
+            state10(); 
+            break;
+        }
+    }
+    static void state11(){
+        switch (nextToken) {
+            case "+":
+           
+            reduction(F);  
+            break;
+            case "-":
+           
+            reduction(F);  
+            break;
+            case "*":
+           
+            reduction(F);
+            break;
+            case "/":
+           
+            reduction(F);
+            break;
+            case ")":
+           
+            reduction(F);
+            break;
+            case "$":
+           
+            reduction(F); 
+            break;
+            default:
+            //System.out.println("11"+nextToken);
+            getNextToken(11);
+            state11();
+            break;
+        }
+    }
+         
+   static void getNextToken(int state) {
+    //System.out.println(nextToken);
+
+   // if(nextToken.compareTo("$")!=0){
+    if(objStack.peek().getTermsymbol()=="@"){
+        if(nextToken.compareTo("n")==0){
+            arrPlace= arrPlace + 1;
+            objStack.push(new obj("n",startvalue,state));
+            objArr.add(new obj("n",startvalue,state));
+            nextToken =  st.nextToken();
+            currToken = nextToken;
+            printState();
+        }
+    } else{
+        
+    prevState=objStack.peek().getCurrState();
+    //System.out.println("prev state:" +  prevState);
+    
+    currToken = nextToken;
+    nextToken =  st.nextToken();
+    if (('0'<=nextToken.charAt(0)&& nextToken.charAt(0)<='9')|| nextToken.charAt(0)=='.'){
+        startvalue = Double.parseDouble(nextToken);
+        nextToken = "n";
+    }
+    token = currToken.charAt(0);
+    arrPlace= arrPlace + 1;
+   // System.out.println(nextToken);
+
+    if (currToken.charAt(0) !='n') {
+        objStack.push(new obj(currToken,state));
+        objArr.add(new obj(currToken,state));
+        printState();
+       
+    }else{
+        
+        objStack.push(new obj("n",startvalue,state));
+        objArr.add(new obj("n",startvalue,state));
+        currToken = "n";
+        printState();
+    }
+  }
+// }else{
+//     System.exit(0);
+//   }
+}
+
+
+// static double get(String a) throws Exception {
+//     if (a != currToken) throw new Exception();
+//     double value=0;
+//     if (a == "n") value = currNum;
+//     getNextToken();
+//     return value;
+// }objStack.peek().getCurrState()
+static void reduction(String letter){
+    //System.out.println("reduction call");
+    switch (prevState) {
+        case 0:
+            if(letter == "E"){
+                objStack.peek().changeState(1);
+                objStack.peek().changenonTermSymbol(letter);
+                objArr.get(objArr.size()-1).changeState(1);
+                objArr.get(objArr.size()-1).changenonTermSymbol(letter);
+                printState();
+                state1();
+            }
+             if(letter == "T"){
+                objStack.peek().changeState(2);
+                objStack.peek().changenonTermSymbol(letter);
+                objArr.get(objArr.size()-1).changeState(2);
+                objArr.get(objArr.size()-1).changenonTermSymbol(letter);
+                printState();
+                state2();
+            }
+             if(letter == "F"){
+                objStack.peek().changeState(3);
+                objStack.peek().changenonTermSymbol(letter);
+                objArr.get(objArr.size()-1).changeState(3);
+                objArr.get(objArr.size()-1).changenonTermSymbol(letter);
+                printState();
+                state3();
+            }
+            break;
+        case 4:
+         if(letter == "E"){
+                objStack.peek().changeState(8);
+                objStack.peek().changenonTermSymbol(letter);
+                objArr.get(objArr.size()-1).changeState(8);
+                objArr.get(objArr.size()-1).changenonTermSymbol(letter);
+                printState();
+                state8();
+            }
+             if(letter == "T"){
+                objStack.peek().changeState(2);
+                objStack.peek().changenonTermSymbol(letter);
+                objArr.get(objArr.size()-1).changeState(2);
+                objArr.get(objArr.size()-1).changenonTermSymbol(letter);
+                printState();
+                state2();
+            }
+             if(letter == "F"){
+                objStack.peek().changeState(3);
+                objStack.peek().changenonTermSymbol(letter);
+                objArr.get(objArr.size()-1).changeState(3);
+                objArr.get(objArr.size()-1).changenonTermSymbol(letter);
+                printState();
+                state3();
+            }
+            break;
+        case 6:
+         if(letter == "E"){
+                System.out.println("letter E in state 6");;
+            }
+             if(letter == "T"){
+                objStack.peek().changeState(9);
+                objStack.peek().changenonTermSymbol(letter);
+                objArr.get(objArr.size()-1).changeState(9);
+                objArr.get(objArr.size()-1).changenonTermSymbol(letter);
+                printState();
+                state9();
+            }
+             if(letter == "F"){
+                objStack.peek().changeState(3);
+                objStack.peek().changenonTermSymbol(letter);
+                objArr.get(objArr.size()-1).changeState(3);
+                objArr.get(objArr.size()-1).changenonTermSymbol(letter);
+                printState();
+                state3();
+            }
+            break;
+        case 7:
+         if(letter == "E"){
+                System.out.println("letter E in state 7");
+                
+            }
+             if(letter == "T"){
+                 System.out.println("letter T in state 7");
+            }
+             if(letter == "F"){
+                objStack.peek().changeState(10);
+                objStack.peek().changenonTermSymbol(letter);
+                objArr.get(objArr.size()-1).changeState(10);
+                objArr.get(objArr.size()-1).changenonTermSymbol(letter);
+                printState();
+                state10();
+            }
+            break;
+        default:
+            System.out.println("state incopatable with reduction");
+            break;
+    }
+}
+    static void printState(){
+       System.out.print("Stack: [");
+        for(int i = 0; i<objArr.size();i++){
+            if(objArr.get(i).getnontermSymbol()!=null){
+        System.out.print(" ("+objArr.get(i).getnontermSymbol()+"="+(int)objArr.get(i).getValue()+":"+objArr.get(i).getCurrState()+")");
+            }else{
+                if(i==0){
+                System.out.print("("+objArr.get(i).getTermsymbol()+":"+objArr.get(i).getCurrState()+") ");
+                }else{
+                System.out.print(" ("+objArr.get(i).getTermsymbol()+":"+objArr.get(i).getCurrState()+")");
+                }
+            }
+        }
+           System.out.print("]");
+        System.out.print("   Input queue:[");
+        for(int i = arrPlace; i<expressionArr.size();i++){
+            if(i==expressionArr.size()-1){
+                System.out.print(expressionArr.get(i));
+               }else{
+            System.out.print(expressionArr.get(i)+" ");
+               }
+        }
+        System.out.println("]");
+
+        }
+    }
